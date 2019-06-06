@@ -14,6 +14,11 @@
   dependencies:
     "@types/babel-types" "*"
 
+"@types/node@^12.0.5":
+  version "12.0.5"
+  resolved "https://msazure.pkgs.visualstudio.com/_packaging/business-app/npm/registry/@types/node/-/node-12.0.5.tgz#ac14404c33d1a789973c45379a67f7f7e58a01b9"
+  integrity sha1-rBRATDPRp4mXPEU3mmf39+WKAbk=
+
 "@vue/component-compiler-utils@^2.5.1":
   version "2.6.0"
   resolved "https://msazure.pkgs.visualstudio.com/_packaging/business-app/npm/registry/@vue/component-compiler-utils/-/component-compiler-utils-2.6.0.tgz#aa46d2a6f7647440b0b8932434d22f12371e543b"

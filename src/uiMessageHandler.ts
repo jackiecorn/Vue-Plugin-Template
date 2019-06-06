@@ -7,7 +7,9 @@ export const handleEvent = (type: String, callback: Function) => {
 };
 window.onmessage = event => {
 	const message = event.data.pluginMessage;
-	for (let eventListener of eventListeners) {
-		if (message.action === eventListener.type) eventListener.callback(message.data);
+	if (message) {
+		for (let eventListener of eventListeners) {
+			if (message.action === eventListener.type) eventListener.callback(message.data);
+		}
 	}
 };

@@ -1,7 +1,9 @@
-import Vue from 'vue';
+const Vue = require('vue');
 import App from './ui.vue';
 
-new Vue({
-	el: '#app',
-	render: h => h(App)
-});
+new Vue(
+	Vue.extend({
+		el: '#app',
+		render: h => h(App)
+	})
+);
