@@ -69,7 +69,9 @@ module.exports = (env, argv) => ({
 	},
 
 	externals: {
-		vue: 'Vue'
+		vue: 'Vue',
+		'v-tooltip': 'VTooltip',
+		konva: 'Konva'
 	},
 
 	// Tells Webpack to generate "ui.html" and to inline "ui.ts" into it
