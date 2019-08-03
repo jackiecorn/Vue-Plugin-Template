@@ -12,12 +12,7 @@ import "./figma-ui/disclosure";
 export default {
   data() {
     return {
-      stage: {},
-      layer: new Konva.Layer(),
-      markerLayer: new Konva.Layer(),
-      markers: [],
-      resizeRatio: 1,
-      noResults: false
+      msg: "Hello"
     };
   },
   mounted() {
