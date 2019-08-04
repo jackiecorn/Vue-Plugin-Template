@@ -5,9 +5,9 @@ div
 
 <script>
 import { dispatch, handleEvent } from "./uiMessageHandler";
-import "./figma-ui/selectMenu";
-import "./figma-ui/iconInput";
-import "./figma-ui/disclosure";
+import "./figma-ui/js/selectMenu";
+import "./figma-ui/js/iconInput";
+import "./figma-ui/js/disclosure";
 
 export default {
   data() {
@@ -24,5 +24,5 @@ export default {
 </script>
 
 <style lang='scss'>
-@import "./figma-ui/main";
+@import "./figma-ui/figma-plugin-ds";
 </style>

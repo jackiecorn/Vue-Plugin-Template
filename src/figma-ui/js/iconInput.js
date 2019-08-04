@@ -53,6 +53,4 @@
 
     };
 
-    iconInput.init();
-
 })();

@@ -52,10 +52,19 @@
 		}
 
 		&:not(:disabled):not(:hover):placeholder-shown {
-			background: linear-gradient(90deg,transparent 6px,rgba(0,0,0,0.1) 0);
-			background-repeat: repeat-x;
-			background-position: left bottom -1px;
-			background-size: calc(100% - 6px) 1px;
+			border: 1px solid transparent;
+			background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAcAAAAABCAYAAABJ5n7WAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAgSURBVHgB7cMBCQAACMTAiR3sX1TQHr+DK2B+I0lSjj29qAEYlIbeBgAAAABJRU5ErkJggg==');
+			background-repeat: no-repeat;
+			background-position: center bottom -0.9px;
+			background-size: calc(100% - 10px) 1px;
+		}
+
+		&:not(:disabled):focus:placeholder-shown {
+			border: 2px solid $figma-blue;
+		}
+
+		&:not(:disabled):focus:not(:placeholder-shown) {
+			padding-left: 0;
 		}
 
 		&:disabled {

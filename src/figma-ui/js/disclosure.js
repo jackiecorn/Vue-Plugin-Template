@@ -55,6 +55,4 @@
 
     };
 
-    disclosure.init();
-
 })();

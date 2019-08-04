@@ -337,6 +337,7 @@
 				let parent = menu.parentNode;
 				let button = parent.querySelector('BUTTON');
 				let menuList = parent.querySelector('UL');
+
 				button.remove();
 				menuList.remove();
 
@@ -349,6 +350,4 @@
 			init = false;
 		}
 	};
-
-	selectMenu.init();
 })();

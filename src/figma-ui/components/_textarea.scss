@@ -7,7 +7,7 @@
 	width: calc(100% - 16px);
 	min-height: 62px;
 	margin: 1px 8px 1px 8px;
-	padding: 7px 4px 7px 7px;
+	padding: 7px 7px 7px 7px;
 
 	resize: none;
 
@@ -18,7 +18,7 @@
 	background-color: $figma-white;
 
 	&:active, &:focus {
-		padding: 6px 4px 6px 6px;
+		padding: 6px 6px 6px 6px;
 
 		color: $figma-black;
 		border: 2px solid $figma-blue;
@@ -37,7 +37,9 @@
 	&:disabled {
 		color: $figma-black-3;
 
-		&:focus {
+		&:focus, &:active {
+			padding: 7px 7px 7px 7px;
+
 			border: 1px solid $figma-black-1;
 		}
 	}
