@@ -1,4 +1,4 @@
-// Figma Plugin API version 1, update 7
+// Figma Plugin API version 1, update 13
 
 declare global {
 	// Global variable with Figma's plugin API.
@@ -70,7 +70,7 @@ declare global {
 		createImage(data: Uint8Array): Image;
 		getImageByHash(hash: string): Image;
 
-		group(nodes: ReadonlyArray<BaseNode>, parent: BaseNode & ChildrenMixin, index?: number): FrameNode;
+		group(nodes: ReadonlyArray<BaseNode>, parent: BaseNode & ChildrenMixin, index?: number): GroupNode;
 		flatten(nodes: ReadonlyArray<BaseNode>, parent?: BaseNode & ChildrenMixin, index?: number): VectorNode;
 
 		union(nodes: ReadonlyArray<BaseNode>, parent: BaseNode & ChildrenMixin, index?: number): BooleanOperationNode;
@@ -122,9 +122,10 @@ declare global {
 	}
 
 	interface ViewportAPI {
-		center: { x: number; y: number };
+		center: Vector;
 		zoom: number;
 		scrollAndZoomIntoView(nodes: ReadonlyArray<BaseNode>): void;
+		readonly bounds: Rect;
 	}
 
 	////////////////////////////////////////////////////////////////////////////////
@@ -135,6 +136,13 @@ declare global {
 	interface Vector {
 		readonly x: number;
 		readonly y: number;
+	}
+
+	interface Rect {
+		readonly x: number;
+		readonly y: number;
+		readonly width: number;
+		readonly height: number;
 	}
 
 	interface RGB {
@@ -402,7 +410,7 @@ declare global {
 		readonly duration: number;
 	}
 
-	export type Transition = SimpleTransition | DirectionalTransition;
+	type Transition = SimpleTransition | DirectionalTransition;
 
 	type Trigger =
 		| { readonly type: 'ON_CLICK' | 'ON_HOVER' | 'ON_PRESS' | 'ON_DRAG' }
@@ -420,13 +428,27 @@ declare global {
 
 	type OverflowDirection = 'NONE' | 'HORIZONTAL' | 'VERTICAL' | 'BOTH';
 
+	type OverlayPositionType =
+		| 'CENTER'
+		| 'TOP_LEFT'
+		| 'TOP_CENTER'
+		| 'TOP_RIGHT'
+		| 'BOTTOM_LEFT'
+		| 'BOTTOM_CENTER'
+		| 'BOTTOM_RIGHT'
+		| 'MANUAL';
+
+	type OverlayBackground = { readonly type: 'NONE' } | { readonly type: 'SOLID_COLOR'; readonly color: RGBA };
+
+	type OverlayBackgroundInteraction = 'NONE' | 'CLOSE_ON_CLICK_OUTSIDE';
+
 	////////////////////////////////////////////////////////////////////////////////
 	// Mixins
 
 	interface BaseNodeMixin {
 		readonly id: string;
 		readonly parent: (BaseNode & ChildrenMixin) | null;
-		name: string; // Note: setting this also sets \`autoRename\` to false on TextNodes
+		name: string; // Note: setting this also sets `autoRename` to false on TextNodes
 		readonly removed: boolean;
 		toString(): string;
 		remove(): void;
@@ -451,7 +473,19 @@ declare global {
 		appendChild(child: SceneNode): void;
 		insertChild(index: number, child: SceneNode): void;
 
+		findChildren(callback?: (node: SceneNode) => boolean): SceneNode[];
+		findChild(callback: (node: SceneNode) => boolean): SceneNode | null;
+
+		/**
+		 * If you only need to search immediate children, it is much faster
+		 * to call node.children.filter(callback) or node.findChildren(callback)
+		 */
 		findAll(callback?: (node: SceneNode) => boolean): SceneNode[];
+
+		/**
+		 * If you only need to search immediate children, it is much faster
+		 * to call node.children.find(callback) or node.findChild(callback)
+		 */
 		findOne(callback: (node: SceneNode) => boolean): SceneNode | null;
 	}
 
@@ -468,6 +502,9 @@ declare global {
 
 		readonly width: number;
 		readonly height: number;
+		constrainProportions: boolean;
+
+		layoutAlign: 'MIN' | 'CENTER' | 'MAX' | 'STRETCH'; // applicable only inside auto-layout frames
 
 		resize(width: number, height: number): void;
 		resizeWithoutConstraints(width: number, height: number): void;
@@ -481,16 +518,10 @@ declare global {
 		effectStyleId: string;
 	}
 
-	interface FrameMixin {
-		backgrounds: ReadonlyArray<Paint>;
-		layoutGrids: ReadonlyArray<LayoutGrid>;
-		clipsContent: boolean;
-		guides: ReadonlyArray<Guide>;
-		gridStyleId: string;
-		backgroundStyleId: string;
-
-		overflowDirection: OverflowDirection; // PROPOSED API ONLY
-		numberOfFixedChildren: number; // PROPOSED API ONLY
+	interface ContainerMixin {
+		expanded: boolean;
+		backgrounds: ReadonlyArray<Paint>; // DEPRECATED: use 'fills' instead
+		backgroundStyleId: string; // DEPRECATED: use 'fillStyleId' instead
 	}
 
 	type StrokeCap = 'NONE' | 'ROUND' | 'SQUARE' | 'ARROW_LINES' | 'ARROW_EQUILATERAL';
@@ -501,12 +532,14 @@ declare global {
 		fills: ReadonlyArray<Paint> | PluginAPI['mixed'];
 		strokes: ReadonlyArray<Paint>;
 		strokeWeight: number;
+		strokeMiterLimit: number;
 		strokeAlign: 'CENTER' | 'INSIDE' | 'OUTSIDE';
 		strokeCap: StrokeCap | PluginAPI['mixed'];
 		strokeJoin: StrokeJoin | PluginAPI['mixed'];
 		dashPattern: ReadonlyArray<number>;
 		fillStyleId: string | PluginAPI['mixed'];
 		strokeStyleId: string;
+		outlineStroke(): VectorNode | null;
 	}
 
 	interface CornerMixin {
@@ -514,13 +547,24 @@ declare global {
 		cornerSmoothing: number;
 	}
 
+	interface RectangleCornerMixin {
+		topLeftRadius: number;
+		topRightRadius: number;
+		bottomLeftRadius: number;
+		bottomRightRadius: number;
+	}
+
 	interface ExportMixin {
 		exportSettings: ReadonlyArray<ExportSettings>;
 		exportAsync(settings?: ExportSettings): Promise<Uint8Array>; // Defaults to PNG format
 	}
 
+	interface RelaunchableMixin {
+		setRelaunchData(relaunchData: { [command: string]: /* description */ string }): void;
+	}
+
 	interface ReactionMixin {
-		readonly reactions: ReadonlyArray<Reaction>; // PROPOSED API ONLY
+		readonly reactions: ReadonlyArray<Reaction>;
 	}
 
 	interface DefaultShapeMixin
@@ -530,18 +574,41 @@ declare global {
 			BlendMixin,
 			GeometryMixin,
 			LayoutMixin,
-			ExportMixin {}
+			ExportMixin,
+			RelaunchableMixin {}
 
-	interface DefaultContainerMixin
+	interface DefaultFrameMixin
 		extends BaseNodeMixin,
 			SceneNodeMixin,
 			ReactionMixin,
 			ChildrenMixin,
-			FrameMixin,
+			ContainerMixin,
+			GeometryMixin,
+			CornerMixin,
+			RectangleCornerMixin,
 			BlendMixin,
 			ConstraintMixin,
 			LayoutMixin,
-			ExportMixin {}
+			ExportMixin,
+			RelaunchableMixin {
+		layoutMode: 'NONE' | 'HORIZONTAL' | 'VERTICAL';
+		counterAxisSizingMode: 'FIXED' | 'AUTO'; // applicable only if layoutMode != "NONE"
+		horizontalPadding: number; // applicable only if layoutMode != "NONE"
+		verticalPadding: number; // applicable only if layoutMode != "NONE"
+		itemSpacing: number; // applicable only if layoutMode != "NONE"
+
+		layoutGrids: ReadonlyArray<LayoutGrid>;
+		gridStyleId: string;
+		clipsContent: boolean;
+		guides: ReadonlyArray<Guide>;
+
+		overflowDirection: OverflowDirection;
+		numberOfFixedChildren: number;
+
+		readonly overlayPositionType: OverlayPositionType;
+		readonly overlayBackground: OverlayBackground;
+		readonly overlayBackgroundInteraction: OverlayBackgroundInteraction;
+	}
 
 	////////////////////////////////////////////////////////////////////////////////
 	// Nodes
@@ -553,40 +620,62 @@ declare global {
 
 		appendChild(child: PageNode): void;
 		insertChild(index: number, child: PageNode): void;
+		findChildren(callback?: (node: PageNode) => boolean): Array<PageNode>;
+		findChild(callback: (node: PageNode) => boolean): PageNode | null;
 
+		/**
+		 * If you only need to search immediate children, it is much faster
+		 * to call node.children.filter(callback) or node.findChildren(callback)
+		 */
 		findAll(callback?: (node: PageNode | SceneNode) => boolean): Array<PageNode | SceneNode>;
+
+		/**
+		 * If you only need to search immediate children, it is much faster
+		 * to call node.children.find(callback) or node.findChild(callback)
+		 */
 		findOne(callback: (node: PageNode | SceneNode) => boolean): PageNode | SceneNode | null;
 	}
 
-	interface PageNode extends BaseNodeMixin, ChildrenMixin, ExportMixin {
+	interface PageNode extends BaseNodeMixin, ChildrenMixin, ExportMixin, RelaunchableMixin {
 		readonly type: 'PAGE';
 		clone(): PageNode;
 
 		guides: ReadonlyArray<Guide>;
 		selection: ReadonlyArray<SceneNode>;
+		selectedTextRange: { node: TextNode; start: number; end: number } | null;
 
 		backgrounds: ReadonlyArray<Paint>;
 
-		readonly prototypeStartNode: FrameNode | ComponentNode | InstanceNode | null; // PROPOSED API ONLY
+		readonly prototypeStartNode: FrameNode | GroupNode | ComponentNode | InstanceNode | null;
 	}
 
-	interface FrameNode extends DefaultContainerMixin {
-		readonly type: 'FRAME' | 'GROUP';
+	interface FrameNode extends DefaultFrameMixin {
+		readonly type: 'FRAME';
 		clone(): FrameNode;
 	}
 
-	interface SliceNode extends BaseNodeMixin, SceneNodeMixin, LayoutMixin, ExportMixin {
+	interface GroupNode
+		extends BaseNodeMixin,
+			SceneNodeMixin,
+			ReactionMixin,
+			ChildrenMixin,
+			ContainerMixin,
+			BlendMixin,
+			LayoutMixin,
+			ExportMixin,
+			RelaunchableMixin {
+		readonly type: 'GROUP';
+		clone(): GroupNode;
+	}
+
+	interface SliceNode extends BaseNodeMixin, SceneNodeMixin, LayoutMixin, ExportMixin, RelaunchableMixin {
 		readonly type: 'SLICE';
 		clone(): SliceNode;
 	}
 
-	interface RectangleNode extends DefaultShapeMixin, ConstraintMixin, CornerMixin {
+	interface RectangleNode extends DefaultShapeMixin, ConstraintMixin, CornerMixin, RectangleCornerMixin {
 		readonly type: 'RECTANGLE';
 		clone(): RectangleNode;
-		topLeftRadius: number;
-		topRightRadius: number;
-		bottomLeftRadius: number;
-		bottomRightRadius: number;
 	}
 
 	interface LineNode extends DefaultShapeMixin, ConstraintMixin {
@@ -624,7 +713,6 @@ declare global {
 	interface TextNode extends DefaultShapeMixin, ConstraintMixin {
 		readonly type: 'TEXT';
 		clone(): TextNode;
-		characters: string;
 		readonly hasMissingFont: boolean;
 		textAlignHorizontal: 'LEFT' | 'CENTER' | 'RIGHT' | 'JUSTIFIED';
 		textAlignVertical: 'TOP' | 'CENTER' | 'BOTTOM';
@@ -640,6 +728,10 @@ declare global {
 		textDecoration: TextDecoration | PluginAPI['mixed'];
 		letterSpacing: LetterSpacing | PluginAPI['mixed'];
 		lineHeight: LineHeight | PluginAPI['mixed'];
+
+		characters: string;
+		insertCharacters(start: number, characters: string, useStyle?: 'BEFORE' | 'AFTER'): void;
+		deleteCharacters(start: number, end: number): void;
 
 		getRangeFontSize(start: number, end: number): number | PluginAPI['mixed'];
 		setRangeFontSize(start: number, end: number, value: number): void;
@@ -661,7 +753,7 @@ declare global {
 		setRangeFillStyleId(start: number, end: number, value: string): void;
 	}
 
-	interface ComponentNode extends DefaultContainerMixin {
+	interface ComponentNode extends DefaultFrameMixin {
 		readonly type: 'COMPONENT';
 		clone(): ComponentNode;
 
@@ -671,16 +763,19 @@ declare global {
 		readonly key: string; // The key to use with "importComponentByKeyAsync"
 	}
 
-	interface InstanceNode extends DefaultContainerMixin {
+	interface InstanceNode extends DefaultFrameMixin {
 		readonly type: 'INSTANCE';
 		clone(): InstanceNode;
 		masterComponent: ComponentNode;
+		scaleFactor: number;
 	}
 
 	interface BooleanOperationNode extends DefaultShapeMixin, ChildrenMixin, CornerMixin {
 		readonly type: 'BOOLEAN_OPERATION';
 		clone(): BooleanOperationNode;
 		booleanOperation: 'UNION' | 'INTERSECT' | 'SUBTRACT' | 'EXCLUDE';
+
+		expanded: boolean;
 	}
 
 	type BaseNode = DocumentNode | PageNode | SceneNode;
@@ -688,6 +783,7 @@ declare global {
 	type SceneNode =
 		| SliceNode
 		| FrameNode
+		| GroupNode
 		| ComponentNode
 		| InstanceNode
 		| BooleanOperationNode
