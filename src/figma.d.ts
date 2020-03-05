@@ -1,4 +1,4 @@
-// Figma Plugin API version 1, update 13
+// Figma Plugin API version 1, update 14
 
 declare global {
 	// Global variable with Figma's plugin API.
@@ -460,6 +460,7 @@ declare global {
 		// be a name related to your plugin. Other plugins will be able to read this data.
 		getSharedPluginData(namespace: string, key: string): string;
 		setSharedPluginData(namespace: string, key: string, value: string): void;
+		setRelaunchData(data: { [command: string]: /* description */ string }): void;
 	}
 
 	interface SceneNodeMixin {
@@ -559,10 +560,6 @@ declare global {
 		exportAsync(settings?: ExportSettings): Promise<Uint8Array>; // Defaults to PNG format
 	}
 
-	interface RelaunchableMixin {
-		setRelaunchData(relaunchData: { [command: string]: /* description */ string }): void;
-	}
-
 	interface ReactionMixin {
 		readonly reactions: ReadonlyArray<Reaction>;
 	}
@@ -574,8 +571,7 @@ declare global {
 			BlendMixin,
 			GeometryMixin,
 			LayoutMixin,
-			ExportMixin,
-			RelaunchableMixin {}
+			ExportMixin {}
 
 	interface DefaultFrameMixin
 		extends BaseNodeMixin,
@@ -589,8 +585,7 @@ declare global {
 			BlendMixin,
 			ConstraintMixin,
 			LayoutMixin,
-			ExportMixin,
-			RelaunchableMixin {
+			ExportMixin {
 		layoutMode: 'NONE' | 'HORIZONTAL' | 'VERTICAL';
 		counterAxisSizingMode: 'FIXED' | 'AUTO'; // applicable only if layoutMode != "NONE"
 		horizontalPadding: number; // applicable only if layoutMode != "NONE"
@@ -636,7 +631,7 @@ declare global {
 		findOne(callback: (node: PageNode | SceneNode) => boolean): PageNode | SceneNode | null;
 	}
 
-	interface PageNode extends BaseNodeMixin, ChildrenMixin, ExportMixin, RelaunchableMixin {
+	interface PageNode extends BaseNodeMixin, ChildrenMixin, ExportMixin {
 		readonly type: 'PAGE';
 		clone(): PageNode;
 
@@ -662,13 +657,12 @@ declare global {
 			ContainerMixin,
 			BlendMixin,
 			LayoutMixin,
-			ExportMixin,
-			RelaunchableMixin {
+			ExportMixin {
 		readonly type: 'GROUP';
 		clone(): GroupNode;
 	}
 
-	interface SliceNode extends BaseNodeMixin, SceneNodeMixin, LayoutMixin, ExportMixin, RelaunchableMixin {
+	interface SliceNode extends BaseNodeMixin, SceneNodeMixin, LayoutMixin, ExportMixin {
 		readonly type: 'SLICE';
 		clone(): SliceNode;
 	}
